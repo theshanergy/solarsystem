@@ -2,11 +2,8 @@ import React, { useRef, useMemo, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Object3D } from 'three'
 
-const Stars = () => {
+const Stars = ({ count = 5000 }) => {
     const meshRef = useRef()
-
-    // Create a large number of stars
-    const count = 5000
 
     // Pre-generate positions for the stars
     const positions = useMemo(() => {
@@ -15,17 +12,14 @@ const Stars = () => {
         const minDistance = 500
 
         for (let i = 0; i < count; i++) {
-            let distance = minDistance + Math.random() * 4500 // Adjusted for a smaller random range
+            const distance = minDistance + Math.random() * 4500
             const theta = Math.random() * 2 * Math.PI
             const phi = Math.random() * Math.PI
 
             const x = distance * Math.sin(phi) * Math.cos(theta)
             const y = distance * Math.sin(phi) * Math.sin(theta)
             const z = distance * Math.cos(phi)
-
-            positions.push(x)
-            positions.push(y)
-            positions.push(z)
+            positions.push(x, y, z)
         }
 
         return new Float32Array(positions)
@@ -42,7 +36,8 @@ const Stars = () => {
             matrix.updateMatrix()
             meshRef.current.setMatrixAt(i, matrix.matrix)
         }
-    }, [positions])
+        meshRef.current.instanceMatrix.needsUpdate = true
+    }, [count, positions])
 
     // Animate the stars
     useFrame(() => {
