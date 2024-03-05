@@ -1,6 +1,8 @@
-import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react'
+import React, { useRef, useEffect, useMemo, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
-import { Vector3, BufferGeometry, SplineCurve, Vector2 } from 'three'
+import { Vector3 } from 'three'
+
+import Trail from './Trail'
 
 const PLANET_COUNT = 10
 const ATTRACTION_FORCE = 1
@@ -41,8 +43,7 @@ const calculateInitialVelocity = (position) => {
 const Planet = ({ position, velocity, size }) => {
     const meshRef = useRef()
     const velocityRef = useRef(new Vector3())
-    const lineRef = useRef(new BufferGeometry())
-    const [trailPoints, setTrailPoints] = useState([position.clone()])
+    const [currentPosition, setCurrentPosition] = useState(position)
 
     // Set initial velocity
     useEffect(() => {
@@ -62,17 +63,8 @@ const Planet = ({ position, velocity, size }) => {
         velocityRef.current.add(gravitationalForce)
         meshRef.current.position.add(velocityRef.current)
 
-        setTrailPoints((prev) => {
-            const lastPoint = prev[prev.length - 1]
-            if (lastPoint.distanceTo(position) > 1) {
-                const newPoints = prev.length > 100 ? prev.slice(1) : prev
-                return [...newPoints, position] // Add the new position
-            }
-            return prev
-        })
-
-        // Update the line geometry
-        lineRef.current.setFromPoints(trailPoints)
+        // Update the currentPosition state with the new position
+        setCurrentPosition(meshRef.current.position.clone())
     })
 
     return (
@@ -82,10 +74,7 @@ const Planet = ({ position, velocity, size }) => {
                 <meshStandardMaterial color={'blue'} />
             </mesh>
 
-            <line>
-                <bufferGeometry ref={lineRef} />
-                <lineBasicMaterial color={'rgba(60,60,60)'} />
-            </line>
+            <Trail position={currentPosition} />
         </>
     )
 }
