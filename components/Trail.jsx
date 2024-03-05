@@ -10,7 +10,7 @@ const Trail = ({ position }) => {
             setTrailPoints((prev) => {
                 const lastPoint = prev.length > 0 ? prev[prev.length - 1] : null
                 if (!lastPoint || lastPoint.distanceTo(position) > 1) {
-                    const newPoints = prev.length > 500 ? prev.slice(1) : prev
+                    const newPoints = prev.length > 300 ? prev.slice(1) : prev
                     return [...newPoints, position.clone()] // Clone the position safely
                 }
                 return prev
