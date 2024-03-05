@@ -2,7 +2,7 @@ import { useRef } from 'react'
 import { useFrame, extend } from '@react-three/fiber'
 import { shaderMaterial } from '@react-three/drei'
 
-const Sun = ({ radius }) => {
+const Sun = ({ radius = 15 }) => {
     // Define a basic noise function (e.g., Perlin or Simplex noise)
     const noiseFunc = `
         vec3 mod289(vec3 x) {

@@ -12,12 +12,16 @@ const Stars = () => {
     const positions = useMemo(() => {
         const positions = []
 
-        const spawnRadius = 500
+        const minDistance = 500
 
         for (let i = 0; i < count; i++) {
-            const x = (Math.random() - 0.5) * 5000 + spawnRadius
-            const y = (Math.random() - 0.5) * 5000 + spawnRadius
-            const z = (Math.random() - 0.5) * 5000 + spawnRadius
+            let distance = minDistance + Math.random() * 4500 // Adjusted for a smaller random range
+            const theta = Math.random() * 2 * Math.PI
+            const phi = Math.random() * Math.PI
+
+            const x = distance * Math.sin(phi) * Math.cos(theta)
+            const y = distance * Math.sin(phi) * Math.sin(theta)
+            const z = distance * Math.cos(phi)
 
             positions.push(x)
             positions.push(y)

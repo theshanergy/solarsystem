@@ -3,7 +3,8 @@ import { useFrame, useThree } from '@react-three/fiber'
 import { Vector3 } from 'three'
 
 const useObjectSelect = () => {
-    const { camera, raycaster, scene, mouse } = useThree()
+    const { controls, camera, raycaster, scene, mouse } = useThree()
+
     const cameraTarget = useRef(new Vector3())
 
     const [activeObject, setActiveObject] = useState(null)
