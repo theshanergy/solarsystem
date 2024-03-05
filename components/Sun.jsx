@@ -1,6 +1,7 @@
 import { useRef } from 'react'
 import { useFrame, extend } from '@react-three/fiber'
 import { shaderMaterial } from '@react-three/drei'
+import { RigidBody } from '@react-three/rapier'
 
 const Sun = ({ radius = 15 }) => {
     // Define a basic noise function (e.g., Perlin or Simplex noise)
@@ -136,14 +137,14 @@ const Sun = ({ radius = 15 }) => {
     })
 
     return (
-        <>
-            <mesh userData={{ type: 'Sun' }}>
+        <RigidBody colliders='ball' userData={{ type: 'Sun' }}>
+            <mesh>
                 <sphereGeometry args={[radius, 32, 32]} />
                 <customShaderMaterial ref={shaderRef} emissiveIntensity={5} time={0} />
             </mesh>
 
             <pointLight position={[0, 0, 0]} intensity={50000} color={'rgb(255, 207, 55)'} />
-        </>
+        </RigidBody>
     )
 }
 
