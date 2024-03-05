@@ -1,26 +1,17 @@
 import React, { useRef, useMemo, useState, useEffect } from 'react'
-import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { EffectComposer, Bloom } from '@react-three/postprocessing'
+import { Canvas, useFrame } from '@react-three/fiber'
 import { OrbitControls, Trail } from '@react-three/drei'
+import { EffectComposer, Bloom } from '@react-three/postprocessing'
 import { Vector3 } from 'three'
+
+import Sun from './Sun'
+import Stars from './Stars'
+import useObjectSelect from '../hooks/useObjectSelect'
 
 const attractionForce = 1
 const planetCount = 8
 const spawnRadius = 250
 const sunRadius = 10
-
-// Sun made of a yellow sphere
-const Sun = () => {
-    return (
-        <>
-            <mesh userData={{ type: 'Sun' }}>
-                <sphereGeometry args={[sunRadius, 32, 32]} />
-                <meshStandardMaterial color={'yellow'} emissive={'yellow'} emissiveIntensity={1} />
-            </mesh>
-            <pointLight position={[0, 0, 0]} intensity={50000} color='#fff' />
-        </>
-    )
-}
 
 // Randomly distribute planets within the spawn radius, but not within the sun
 const calculateInitialPostition = () => {
@@ -74,17 +65,9 @@ const Planet = ({ position, velocity }) => {
         const sunPosition = new Vector3(0, 0, 0) // Assuming the sun is at the origin
         const directionToSun = new Vector3().subVectors(sunPosition, position)
         const distanceSquared = position.distanceToSquared(sunPosition)
-        const distance = Math.sqrt(distanceSquared)
 
         const forceMagnitude = attractionForce / Math.max(distanceSquared, 0.1) // Simplified gravitational force
         const gravitationalForce = directionToSun.normalize().multiplyScalar(forceMagnitude)
-
-        // If planet moves outside of spawn radius, position it at the outside edge of the spawn radius with a new random velocity
-        if (distance > spawnRadius) {
-            // position at outside edge of spawn radius, y=0
-            meshRef.current.position.copy(directionToSun.normalize().multiplyScalar(spawnRadius))
-            velocityRef.current = calculateInitialVelocity(meshRef.current.position)
-        }
 
         // Update velocity based on gravitational force
         velocityRef.current.add(gravitationalForce)
@@ -94,7 +77,7 @@ const Planet = ({ position, velocity }) => {
     })
 
     return (
-        <Trail length={trailLength} width={5} color={0x0000ff}>
+        <Trail length={trailLength} width={2} color={'rgb(60, 60, 60)'}>
             <mesh ref={meshRef} position={position} userData={{ type: 'Planet' }} receiveShadow>
                 <sphereGeometry args={[size, 32, 32]} />
                 <meshStandardMaterial color={'blue'} />
@@ -126,51 +109,14 @@ const Planets = () => {
 
 // Scene component
 const Scene = () => {
-    const { camera, raycaster, scene, mouse } = useThree()
-    const cameraTarget = useRef(new Vector3())
-
-    const [activeObject, setActiveObject] = useState(null)
-
-    useEffect(() => {
-        const onClick = (event) => {
-            // Update the picking ray with the camera and mouse position
-            raycaster.setFromCamera(mouse, camera)
-
-            // Calculate objects intersecting the picking ray
-            const intersects = raycaster.intersectObjects(scene.children, true)
-
-            if (intersects.length > 0) {
-                // Assuming the first intersected object is the one we're interested in
-                const object = intersects[0].object
-
-                if (object.userData.type === 'Planet' || object.userData.type === 'Sun') {
-                    setActiveObject(object)
-                }
-            }
-        }
-
-        // Add event listener
-        window.addEventListener('click', onClick)
-
-        return () => {
-            window.removeEventListener('click', onClick)
-        }
-    }, [camera, mouse, raycaster, scene.children])
-
-    useFrame(() => {
-        if (activeObject) {
-            // Smoothly move the camera target to the active object
-            const target = new Vector3().copy(activeObject.position)
-            const smoothness = 0.05
-            cameraTarget.current.lerp(target, smoothness)
-            camera.lookAt(cameraTarget.current)
-        }
-    })
+    // Support object selection
+    useObjectSelect()
 
     return (
         <>
-            <Sun />
+            <Sun radius={sunRadius} />
             <Planets />
+            <Stars />
         </>
     )
 }
@@ -178,10 +124,10 @@ const Scene = () => {
 // App component
 const App = () => {
     return (
-        <Canvas camera={{ position: [0, 50, 150] }}>
+        <Canvas camera={{ position: [0, 50, 150], far: 200000 }}>
             <ambientLight intensity={0.1} />
             <color attach='background' args={['black']} />
-            <OrbitControls />
+            <OrbitControls maxDistance={1000} minDistance={20} />
 
             <Scene />
 
