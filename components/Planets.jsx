@@ -4,6 +4,7 @@ import { InstancedRigidBodies } from '@react-three/rapier'
 import { Vector3 } from 'three'
 import Trail from './Trail'
 import Explosion from './Explosion'
+import Planet from './Planet'
 
 const PLANET_COUNT = 10
 const SUN_RADIUS = 10
@@ -138,14 +139,13 @@ const Planets = () => {
     return (
         <>
             <InstancedRigidBodies ref={planetsRef} instances={planetData} colliders='ball' onCollisionEnter={handleCollision}>
-                <instancedMesh args={[null, null, planetData.length]} receiveShadow>
-                    <sphereGeometry args={[2, 32, 32]} />
-                    <meshStandardMaterial color={'blue'} />
-                </instancedMesh>
+                <Planet count={planetData.length} />
             </InstancedRigidBodies>
+
             {trailPositions.map((position, index) => (
                 <Trail key={planetData[index].key} position={position} />
             ))}
+
             {Object.entries(explosionPositions).map(([id, position]) => (
                 <Explosion key={id} position={position} onComplete={() => handleExplosionComplete(id)} />
             ))}

@@ -5,16 +5,12 @@ import { Physics } from '@react-three/rapier'
 
 import Scene from './Scene'
 
-// Constants moved outside components
-const cameraPosition = [0, 50, 150]
-const backgroundColor = 'black'
-const ambientLightIntensity = 0.1
-
 // App component
 const App = () => (
-    <Canvas camera={{ position: cameraPosition, far: 200000 }}>
-        <ambientLight intensity={ambientLightIntensity} />
-        <color attach='background' args={[backgroundColor]} />
+    <Canvas camera={{ position: [0, 50, 150], far: 200000 }}>
+        <color attach='background' args={['black']} />
+        <ambientLight intensity={0.25} />
+
         <OrbitControls maxDistance={450} minDistance={50} makeDefault />
 
         <Physics gravity={[0, 0, 0]}>
