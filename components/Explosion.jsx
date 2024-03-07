@@ -1,7 +1,6 @@
 import React, { useRef, useMemo, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
-import { Line } from '@react-three/drei'
-import * as THREE from 'three'
+import { BufferGeometry, Float32BufferAttribute, ShaderMaterial, Color, AdditiveBlending } from 'three'
 
 // Vertex shader code
 const vertexShader = `
@@ -80,27 +79,27 @@ const Explosion = ({ id, position, lookAt, spread = 10, onComplete }) => {
             sizes[i] = Math.random() * 2 + 1
         }
 
-        const geometry = new THREE.BufferGeometry()
-        geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
-        geometry.setAttribute('aVelocity', new THREE.Float32BufferAttribute(velocities, 3))
-        geometry.setAttribute('aSize', new THREE.Float32BufferAttribute(sizes, 1))
+        const geometry = new BufferGeometry()
+        geometry.setAttribute('position', new Float32BufferAttribute(positions, 3))
+        geometry.setAttribute('aVelocity', new Float32BufferAttribute(velocities, 3))
+        geometry.setAttribute('aSize', new Float32BufferAttribute(sizes, 1))
 
         return geometry
     }, [spread])
 
     const material = useMemo(() => {
-        return new THREE.ShaderMaterial({
+        return new ShaderMaterial({
             uniforms: {
                 uTime: { value: 0 },
                 uSpread: { value: spread },
-                uColor: { value: new THREE.Color('orange') },
+                uColor: { value: new Color('orange') },
                 uOpacity: { value: 1 },
             },
             vertexShader,
             fragmentShader,
             transparent: true,
             depthWrite: false,
-            blending: THREE.AdditiveBlending,
+            blending: AdditiveBlending,
         })
     }, [spread])
 

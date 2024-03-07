@@ -1,5 +1,6 @@
 import useObjectSelect from '../hooks/useObjectSelect'
 import useGravity from '../hooks/useGravity'
+import { ExplosionProvider } from '../context/Explosions'
 
 import Sun from './Sun'
 import Stars from './Stars'
@@ -14,12 +15,12 @@ const Scene = () => {
     useGravity()
 
     return (
-        <>
+        <ExplosionProvider>
             <Sun />
 
             <Planets />
             <Stars />
-        </>
+        </ExplosionProvider>
     )
 }
 

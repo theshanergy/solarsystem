@@ -3,16 +3,17 @@ import { useFrame } from '@react-three/fiber'
 import { InstancedRigidBodies } from '@react-three/rapier'
 import { Vector3 } from 'three'
 
+import { useExplosion } from '../context/Explosions'
 import { calculateInitialPosition, calculateInitialVelocity, calculateEntryVelocity } from '../utils/planetCalculations'
 
-import Trail from './Trail'
-import Explosion from './Explosion'
 import Planet from './Planet'
+import Trail from './Trail'
 
 // Planets component
 const Planets = ({ count = 10 }) => {
+    const { triggerExplosion } = useExplosion()
+
     const planetsRef = useRef()
-    const [explosionPositions, setExplosionPositions] = useState({})
     const [trailPositions, setTrailPositions] = useState([])
     const [planetData, setPlanetData] = useState(() => {
         return new Array(count).fill(null).map((_, index) => {
@@ -50,27 +51,19 @@ const Planets = ({ count = 10 }) => {
             const otherMass = other.rigidBody.mass()
             console.log('Planet collision')
 
-            // Get the collision world position
-            const collisionWorldPosition = manifold.solverContactPoint(0)
-
             // If other mass is greater
             if (otherMass > targetMass) {
+                // Get the collision world position
+                const collisionWorldPosition = manifold.solverContactPoint(0)
+
                 // Get position of the planet
                 const targetPosition = target.rigidBody.translation()
 
-                // Add this position to the explosions state, if it doesnt already exist
-                setExplosionPositions((prev) => {
-                    if (!prev[target.rigidBody.userData.key]) {
-                        return {
-                            ...prev,
-                            [target.rigidBody.userData.key]: {
-                                position: new Vector3(collisionWorldPosition.x, collisionWorldPosition.y, collisionWorldPosition.z),
-                                lookAt: new Vector3(targetPosition.x, targetPosition.y, targetPosition.z),
-                            },
-                        }
-                    }
-                    return prev
-                })
+                // Trigger an explosion.
+                triggerExplosion(
+                    new Vector3(collisionWorldPosition.x, collisionWorldPosition.y, collisionWorldPosition.z),
+                    new Vector3(targetPosition.x, targetPosition.y, targetPosition.z)
+                )
 
                 // get the key of the current planet
                 const targetPlanetKey = target.rigidBody.userData.key
@@ -108,14 +101,6 @@ const Planets = ({ count = 10 }) => {
         }
     }
 
-    // Remove key from explosion positions when the explosion is complete
-    const handleExplosionComplete = (id) => {
-        setExplosionPositions((prev) => {
-            const { [id]: value, ...rest } = prev
-            return rest
-        })
-    }
-
     return (
         <>
             <InstancedRigidBodies ref={planetsRef} instances={planetData} colliders='ball' onCollisionEnter={handleCollision}>
@@ -124,10 +109,6 @@ const Planets = ({ count = 10 }) => {
 
             {trailPositions.map((position, index) => (
                 <Trail key={planetData[index].key} position={position} />
-            ))}
-
-            {Object.entries(explosionPositions).map(([id, value]) => (
-                <Explosion key={id} position={value.position} lookAt={value.lookAt} onComplete={() => handleExplosionComplete(id)} />
             ))}
         </>
     )
