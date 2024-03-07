@@ -49,7 +49,7 @@ const Sun = () => {
     })
 
     return (
-        <RigidBody colliders='ball' userData={{ type: 'Sun' }}>
+        <RigidBody colliders='ball' userData={{ type: 'Sun' }} type='kinematicPosition'>
             <mesh>
                 <sphereGeometry args={[SUN_RADIUS, 32, 32]} />
                 <customShaderMaterial ref={shaderRef} emissiveIntensity={5} time={0} />
