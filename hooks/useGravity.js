@@ -1,10 +1,10 @@
 import { useFrame } from '@react-three/fiber'
 import { useRapier } from '@react-three/rapier'
 import { Vector3 } from 'three'
+import { GRAVITATIONAL_CONSTANT, SCALE_FACTOR } from '../config/constants'
 
-const useGravityImpulse = (scaleFactor = 0.0001) => {
+const useGravity = () => {
     const { world } = useRapier()
-    const gravitationalConstant = 6.6743e-11 // Universal gravitational constant
 
     useFrame(() => {
         if (!world) return
@@ -29,7 +29,7 @@ const useGravityImpulse = (scaleFactor = 0.0001) => {
 
                 if (distance === 0) return
 
-                const force = (gravitationalConstant * currentMass * otherMass) / Math.pow(distance * scaleFactor, 2)
+                const force = (GRAVITATIONAL_CONSTANT * currentMass * otherMass) / Math.pow(distance * SCALE_FACTOR, 2)
                 impulseVector.subVectors(otherPositionVector, currentPositionVector).normalize().multiplyScalar(force)
                 currentBody.applyImpulse(impulseVector, true)
             })
@@ -37,4 +37,4 @@ const useGravityImpulse = (scaleFactor = 0.0001) => {
     })
 }
 
-export default useGravityImpulse
+export default useGravity

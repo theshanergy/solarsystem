@@ -3,8 +3,9 @@ import { useFrame, extend } from '@react-three/fiber'
 import { shaderMaterial } from '@react-three/drei'
 import { RigidBody } from '@react-three/rapier'
 import noise from './../shaders/noise.glsl'
+import { SUN_RADIUS } from '../config/constants'
 
-const Sun = ({ radius = 15 }) => {
+const Sun = () => {
     const CustomShaderMaterial = shaderMaterial(
         { emissiveIntensity: 1.0, time: 0 },
         // Vertex Shader
@@ -50,7 +51,7 @@ const Sun = ({ radius = 15 }) => {
     return (
         <RigidBody colliders='ball' userData={{ type: 'Sun' }}>
             <mesh>
-                <sphereGeometry args={[radius, 32, 32]} />
+                <sphereGeometry args={[SUN_RADIUS, 32, 32]} />
                 <customShaderMaterial ref={shaderRef} emissiveIntensity={5} time={0} />
             </mesh>
 

@@ -27,7 +27,7 @@ const Trail = ({ position }) => {
     return (
         <line>
             <bufferGeometry ref={lineRef} />
-            <lineBasicMaterial color={'rgba(90,90,90)'} transparent opacity={0.25} />
+            <lineBasicMaterial color={'rgba(50,50,50)'} transparent opacity={0.5} />
         </line>
     )
 }

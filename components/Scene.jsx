@@ -1,5 +1,5 @@
 import useObjectSelect from '../hooks/useObjectSelect'
-import useGravityImpulse from '../hooks/useGravityImpulse'
+import useGravity from '../hooks/useGravity'
 
 import Sun from './Sun'
 import Stars from './Stars'
@@ -11,7 +11,7 @@ const Scene = () => {
     useObjectSelect()
 
     // Custom hook for gravity logic
-    useGravityImpulse()
+    useGravity()
 
     return (
         <>
