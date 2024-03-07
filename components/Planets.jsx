@@ -10,7 +10,7 @@ import { useTrails } from '../context/Trails'
 import Planet from './Planet'
 
 // Planets component
-const Planets = ({ count = 20 }) => {
+const Planets = ({ count = 14 }) => {
     const { triggerExplosion } = useExplosion()
     const { addTrailPoint, clearTrail } = useTrails()
 
@@ -38,7 +38,13 @@ const Planets = ({ count = 20 }) => {
 
     // Update the planet count
     useEffect(() => {
+        // Set the planet count
         setPlanetCount(planetsRef.current.length)
+
+        // add some initial spin to the planets
+        planetsRef.current.forEach((planet) => {
+            planet.setAngvel(new Vector3(0, Math.random() - 0.5, 0))
+        })
     }, [planetsRef.current])
 
     // Add a trail point for each planet
