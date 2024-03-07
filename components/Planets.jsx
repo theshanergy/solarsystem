@@ -55,10 +55,19 @@ const Planets = ({ count = 10 }) => {
 
             // If other mass is greater
             if (otherMass > targetMass) {
+                // Get position of the planet
+                const targetPosition = target.rigidBody.translation()
+
                 // Add this position to the explosions state, if it doesnt already exist
                 setExplosionPositions((prev) => {
                     if (!prev[target.rigidBody.userData.key]) {
-                        return { ...prev, [target.rigidBody.userData.key]: new Vector3(collisionWorldPosition.x, collisionWorldPosition.y, collisionWorldPosition.z) }
+                        return {
+                            ...prev,
+                            [target.rigidBody.userData.key]: {
+                                position: new Vector3(collisionWorldPosition.x, collisionWorldPosition.y, collisionWorldPosition.z),
+                                lookAt: new Vector3(targetPosition.x, targetPosition.y, targetPosition.z),
+                            },
+                        }
                     }
                     return prev
                 })
@@ -117,8 +126,8 @@ const Planets = ({ count = 10 }) => {
                 <Trail key={planetData[index].key} position={position} />
             ))}
 
-            {Object.entries(explosionPositions).map(([id, position]) => (
-                <Explosion key={id} position={position} onComplete={() => handleExplosionComplete(id)} />
+            {Object.entries(explosionPositions).map(([id, value]) => (
+                <Explosion key={id} position={value.position} lookAt={value.lookAt} onComplete={() => handleExplosionComplete(id)} />
             ))}
         </>
     )
