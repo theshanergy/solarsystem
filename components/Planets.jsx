@@ -1,108 +1,103 @@
-import React, { useRef, useState, useEffect } from 'react'
+import React, { useRef, useState, useEffect, useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { InstancedRigidBodies } from '@react-three/rapier'
 import { Vector3 } from 'three'
 
+import { calculateInitialPosition, calculateInitialVelocity } from '../utils/planetCalculations'
 import { useExplosion } from '../context/Explosions'
 import { useTrails } from '../context/Trails'
-import { calculateInitialPosition, calculateInitialVelocity, calculateEntryVelocity } from '../utils/planetCalculations'
 
 import Planet from './Planet'
 
 // Planets component
-const Planets = ({ count = 10 }) => {
+const Planets = ({ count = 20 }) => {
     const { triggerExplosion } = useExplosion()
     const { addTrailPoint, clearTrail } = useTrails()
 
     const planetsRef = useRef()
     const [planetCount, setPlanetCount] = useState(count)
 
+    // Planet props
+    const newPlanet = (respawn = false) => {
+        const key = 'instance_' + Math.random()
+        const position = calculateInitialPosition(respawn)
+        const linearVelocity = calculateInitialVelocity(position, respawn)
+        const scale = 0.5 + Math.random() * 1.5
+
+        return { key, position, linearVelocity, scale, userData: { type: 'Planet', key } }
+    }
+
     // Set up the initial planet data
-    const [planetData, setPlanetData] = useState(() => {
-        return new Array(count).fill(null).map((_, index) => {
-            const scale = 0.5 + Math.random() * 1.5
-            const initialPosition = calculateInitialPosition()
-            const initialVelocity = calculateInitialVelocity(initialPosition)
-            const key = 'instance_' + Math.random()
-            const planet = {
-                key: key,
-                position: initialPosition,
-                linearVelocity: initialVelocity,
-                scale,
-                userData: { type: 'Planet', key: key },
-            }
-            return planet
-        })
-    })
+    const planetData = useMemo(() => {
+        const planets = []
+        for (let i = 0; i < count; i++) {
+            planets.push(newPlanet())
+        }
+        return planets
+    }, [count])
 
     // Update the planet count
     useEffect(() => {
         setPlanetCount(planetsRef.current.length)
-    }, [planetsRef])
+    }, [planetsRef.current])
 
+    // Add a trail point for each planet
     useFrame(() => {
-        if (planetsRef.current) {
-            // Loop through the planets and add a trail point for each
-            planetsRef.current.forEach((planet) => {
-                const position = planet.translation()
-                addTrailPoint(planet.userData.key, new Vector3(position.x, position.y, position.z))
-            })
-        }
+        planetsRef.current?.forEach((planet) => {
+            const position = planet.translation()
+            addTrailPoint(planet.userData.key, new Vector3(position.x, position.y, position.z))
+        })
     })
 
     // Handle collisions
     const handleCollision = ({ manifold, target, other }) => {
-        // If the other body is a planet
-        if (other.rigidBody.userData.type === 'Planet') {
-            // get the mass of the target (current) and the other
-            const targetMass = target.rigidBody.mass()
-            const otherMass = other.rigidBody.mass()
-            console.log('Planet collision')
+        console.log('Planet collision')
 
-            // If other mass is greater
-            if (otherMass > targetMass) {
-                // Get the collision world position
-                const collisionWorldPosition = manifold.solverContactPoint(0)
+        // get the mass of both objects
+        const targetMass = target.rigidBody.mass()
+        const otherMass = other.rigidBody.mass()
 
-                // Get position of the planet
-                const targetPosition = target.rigidBody.translation()
+        // If other object is more massive
+        if (otherMass > targetMass) {
+            // Get the collision and target positions
+            const targetPosition = target.rigidBody.translation()
+            const collisionWorldPosition = manifold.solverContactPoint(0)
 
-                // Trigger an explosion.
-                triggerExplosion(
-                    new Vector3(collisionWorldPosition.x, collisionWorldPosition.y, collisionWorldPosition.z),
-                    new Vector3(targetPosition.x, targetPosition.y, targetPosition.z)
-                )
+            // Get the velocities of both objects
+            const targetVelocity = target.rigidBody.linvel()
+            const otherVelocity = other.rigidBody.linvel()
 
-                // get the key of the current planet
-                const targetPlanetKey = target.rigidBody.userData.key
+            // Calculate the combined velocity using conservation of momentum
+            const combinedMass = targetMass + otherMass
+            const combinedVelocity = new Vector3().addScaledVector(targetVelocity, targetMass).addScaledVector(otherVelocity, otherMass).divideScalar(combinedMass)
 
-                // calculate a new position and velocity for the other planet
-                const targetVelocity = target.rigidBody.linvel()
-                const otherVelocity = other.rigidBody.linvel()
-                const newOtherVelocity = new Vector3().copy(targetVelocity).add(otherVelocity).divideScalar(2)
-                other.rigidBody.setLinvel(newOtherVelocity)
-
-                // Clear the trail for the current planet
-                clearTrail(targetPlanetKey)
-
-                // Respawn the current planet
-                const newKey = 'instance_' + Math.random()
-                const newPosition = calculateInitialPosition(true)
-                const newVelocity = calculateEntryVelocity(newPosition)
-
-                target.rigidBody.userData.key = newKey
-                target.rigidBody.setTranslation(newPosition)
-                target.rigidBody.setLinvel(newVelocity)
+            // Set the combined velocity to the other
+            if (other.rigidBody.userData.type === 'Planet') {
+                other.rigidBody.setLinvel(combinedVelocity)
             }
+
+            // Clear trail of the target planet
+            clearTrail(target.rigidBody.userData.key)
+
+            // Trigger explosion.
+            triggerExplosion(
+                new Vector3(collisionWorldPosition.x, collisionWorldPosition.y, collisionWorldPosition.z),
+                new Vector3(targetPosition.x, targetPosition.y, targetPosition.z)
+            )
+
+            // Respawn the target planet
+            const newPlanetData = newPlanet(true)
+
+            target.rigidBody.userData.key = newPlanetData.key
+            target.rigidBody.setTranslation(newPlanetData.position)
+            target.rigidBody.setLinvel(newPlanetData.linearVelocity)
         }
     }
 
     return (
-        <>
-            <InstancedRigidBodies ref={planetsRef} instances={planetData} colliders='ball' onCollisionEnter={handleCollision}>
-                <Planet count={planetCount} />
-            </InstancedRigidBodies>
-        </>
+        <InstancedRigidBodies ref={planetsRef} instances={planetData} colliders='ball' onCollisionEnter={handleCollision}>
+            <Planet count={planetCount} />
+        </InstancedRigidBodies>
     )
 }
 

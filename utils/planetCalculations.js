@@ -12,18 +12,16 @@ export const calculateInitialPosition = (isEntry = false) => {
 }
 
 // Calculate the initial velocity of the planet
-export const calculateInitialVelocity = (position) => {
+export const calculateInitialVelocity = (position, respawn) => {
     const radialVector = new Vector3().copy(position)
     const distance = radialVector.length()
     const orbitalSpeed = Math.sqrt((GRAVITATIONAL_CONSTANT * SUN_MASS) / distance)
     const upVector = new Vector3(0, 1, 0)
     const velocity = new Vector3().crossVectors(radialVector, upVector).normalize().multiplyScalar(orbitalSpeed).multiplyScalar(30000)
 
-    return velocity
-}
+    if (respawn) {
+        velocity.multiplyScalar(0.5)
+    }
 
-// Calculate a slightly lower initial velocity for planets entering from outside the solar system
-export const calculateEntryVelocity = (position) => {
-    const initialVelocity = calculateInitialVelocity(position)
-    return initialVelocity.multiplyScalar(0.75)
+    return velocity
 }
