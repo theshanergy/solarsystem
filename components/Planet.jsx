@@ -6,7 +6,7 @@ import { TextureLoader } from 'three'
 const Planet = ({ count }) => {
     const mesh = useRef()
 
-    const texture = useLoader(TextureLoader, '../textures/planet.jpg')
+    const texture = useLoader(TextureLoader, '/textures/planet.jpg')
 
     // Create a random color for each instance
     const instanceColors = useMemo(() => {
