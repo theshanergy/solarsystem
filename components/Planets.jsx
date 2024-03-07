@@ -1,20 +1,23 @@
-import React, { useRef, useState } from 'react'
+import React, { useRef, useState, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { InstancedRigidBodies } from '@react-three/rapier'
 import { Vector3 } from 'three'
 
 import { useExplosion } from '../context/Explosions'
+import { useTrails } from '../context/Trails'
 import { calculateInitialPosition, calculateInitialVelocity, calculateEntryVelocity } from '../utils/planetCalculations'
 
 import Planet from './Planet'
-import Trail from './Trail'
 
 // Planets component
 const Planets = ({ count = 10 }) => {
     const { triggerExplosion } = useExplosion()
+    const { addTrailPoint, clearTrail } = useTrails()
 
     const planetsRef = useRef()
-    const [trailPositions, setTrailPositions] = useState([])
+    const [planetCount, setPlanetCount] = useState(count)
+
+    // Set up the initial planet data
     const [planetData, setPlanetData] = useState(() => {
         return new Array(count).fill(null).map((_, index) => {
             const scale = 0.5 + Math.random() * 1.5
@@ -23,8 +26,8 @@ const Planets = ({ count = 10 }) => {
             const key = 'instance_' + Math.random()
             const planet = {
                 key: key,
-                position: initialPosition.toArray(),
-                linearVelocity: initialVelocity.toArray(),
+                position: initialPosition,
+                linearVelocity: initialVelocity,
                 scale,
                 userData: { type: 'Planet', key: key },
             }
@@ -32,13 +35,18 @@ const Planets = ({ count = 10 }) => {
         })
     })
 
+    // Update the planet count
+    useEffect(() => {
+        setPlanetCount(planetsRef.current.length)
+    }, [planetsRef])
+
     useFrame(() => {
         if (planetsRef.current) {
-            const newTrailPositions = planetsRef.current.map((planet) => {
+            // Loop through the planets and add a trail point for each
+            planetsRef.current.forEach((planet) => {
                 const position = planet.translation()
-                return new Vector3(position.x, position.y, position.z)
+                addTrailPoint(planet.userData.key, new Vector3(position.x, position.y, position.z))
             })
-            setTrailPositions(newTrailPositions)
         }
     })
 
@@ -74,6 +82,9 @@ const Planets = ({ count = 10 }) => {
                 const newOtherVelocity = new Vector3().copy(targetVelocity).add(otherVelocity).divideScalar(2)
                 other.rigidBody.setLinvel(newOtherVelocity)
 
+                // Clear the trail for the current planet
+                clearTrail(targetPlanetKey)
+
                 // Respawn the current planet
                 const newKey = 'instance_' + Math.random()
                 const newPosition = calculateInitialPosition(true)
@@ -82,21 +93,6 @@ const Planets = ({ count = 10 }) => {
                 target.rigidBody.userData.key = newKey
                 target.rigidBody.setTranslation(newPosition)
                 target.rigidBody.setLinvel(newVelocity)
-
-                // update the planet data
-                setPlanetData((prevData) =>
-                    prevData.map((planet) => {
-                        if (planet.key === targetPlanetKey) {
-                            return {
-                                ...planet,
-                                key: newKey,
-                                position: newPosition.toArray(),
-                                linearVelocity: newVelocity.toArray(),
-                            }
-                        }
-                        return planet
-                    })
-                )
             }
         }
     }
@@ -104,12 +100,8 @@ const Planets = ({ count = 10 }) => {
     return (
         <>
             <InstancedRigidBodies ref={planetsRef} instances={planetData} colliders='ball' onCollisionEnter={handleCollision}>
-                <Planet count={planetData.length} />
+                <Planet count={planetCount} />
             </InstancedRigidBodies>
-
-            {trailPositions.map((position, index) => (
-                <Trail key={planetData[index].key} position={position} />
-            ))}
         </>
     )
 }
