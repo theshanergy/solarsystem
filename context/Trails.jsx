@@ -1,35 +1,37 @@
-import React, { createContext, useState, useContext } from 'react'
-import Trail from '../components/Trail'
+import React, { createContext, useState, useContext, useCallback } from 'react'
+import { Line } from '@react-three/drei'
 
 const TrailContext = createContext()
 
 export const useTrails = () => useContext(TrailContext)
 
 export const TrailProvider = ({ children }) => {
-    const [trailPositions, setTrailPositions] = useState({}) // Initialize as an object
+    const [trails, setTrails] = useState({})
 
-    // Add a point to a trail by key
-    const addTrailPoint = (key, position) => {
-        setTrailPositions((prev) => ({
-            ...prev,
-            [key]: position, // Use object spread to update the position by key
-        }))
-    }
-
-    // Clear trail positions
-    const clearTrail = (key) => {
-        setTrailPositions((prev) => {
-            const newTrailPositions = { ...prev }
-            delete newTrailPositions[key] // Use delete to remove the key
-            return newTrailPositions
+    const addTrailPoint = useCallback((key, position) => {
+        setTrails((prevTrails) => {
+            const trail = prevTrails[key] || []
+            const newTrail = trail.length >= 300 ? trail.slice(1) : trail
+            const lastPoint = newTrail[newTrail.length - 1]
+            if (!lastPoint || lastPoint.distanceToSquared(position) > 1) {
+                return { ...prevTrails, [key]: [...newTrail, position.clone()] }
+            }
+            return prevTrails
         })
-    }
+    }, [])
+
+    const clearTrail = useCallback((key) => {
+        setTrails((prevTrails) => {
+            const { [key]: _, ...rest } = prevTrails // Destructuring to omit the key
+            return rest
+        })
+    }, [])
 
     return (
-        <TrailContext.Provider value={{ trailPositions, addTrailPoint, clearTrail }}>
+        <TrailContext.Provider value={{ addTrailPoint, clearTrail }}>
             {children}
-            {Object.keys(trailPositions).map((key) => (
-                <Trail key={key} position={trailPositions[key]} />
+            {Object.entries(trails).map(([key, positions]) => (
+                <Line key={key} points={positions} color='rgba(30,30,30)' />
             ))}
         </TrailContext.Provider>
     )
