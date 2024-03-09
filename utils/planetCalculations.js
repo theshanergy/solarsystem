@@ -17,10 +17,10 @@ export const calculateInitialVelocity = (position, respawn) => {
     const distance = radialVector.length()
     const orbitalSpeed = Math.sqrt((GRAVITATIONAL_CONSTANT * SUN_MASS) / distance)
     const upVector = new Vector3(0, 1, 0)
-    const velocity = new Vector3().crossVectors(radialVector, upVector).normalize().multiplyScalar(orbitalSpeed).multiplyScalar(30000)
+    const velocity = new Vector3().crossVectors(radialVector, upVector).normalize().multiplyScalar(orbitalSpeed).multiplyScalar(20000)
 
     if (respawn) {
-        velocity.multiplyScalar(0.5)
+        velocity.multiplyScalar(0.75)
     }
 
     return velocity

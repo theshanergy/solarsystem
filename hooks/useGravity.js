@@ -1,12 +1,11 @@
-import { useFrame } from '@react-three/fiber'
-import { useRapier } from '@react-three/rapier'
+import { useRapier, useBeforePhysicsStep } from '@react-three/rapier'
 import { Vector3 } from 'three'
 import { GRAVITATIONAL_CONSTANT, SCALE_FACTOR } from '../config/constants'
 
 const useGravity = () => {
     const { world } = useRapier()
 
-    useFrame(() => {
+    useBeforePhysicsStep(() => {
         if (!world) return
 
         const impulseVector = new Vector3()
