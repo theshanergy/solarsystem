@@ -1,10 +1,11 @@
 import React, { useRef, useMemo } from 'react'
-import { Color } from 'three'
+import { TextureLoader, Color } from 'three'
 import { useLoader } from '@react-three/fiber'
-import { TextureLoader } from 'three'
+import { useCamera } from '../context/Camera'
 
 const Planet = ({ count }) => {
     const mesh = useRef()
+    const { handleFocus } = useCamera()
 
     const texture = useLoader(TextureLoader, '/textures/planet.jpg')
 
@@ -26,7 +27,7 @@ const Planet = ({ count }) => {
     }, [count])
 
     return (
-        <instancedMesh ref={mesh} args={[null, null, count]} castShadow receiveShadow>
+        <instancedMesh ref={mesh} args={[null, null, count]} onClick={handleFocus} castShadow receiveShadow>
             <sphereGeometry args={[2, 32, 32]}>
                 <instancedBufferAttribute attach='attributes-color' args={[instanceColors, 3]} />
             </sphereGeometry>

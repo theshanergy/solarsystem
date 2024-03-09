@@ -4,8 +4,11 @@ import { shaderMaterial } from '@react-three/drei'
 import { RigidBody } from '@react-three/rapier'
 import noise from './../shaders/noise.glsl'
 import { SUN_RADIUS } from '../config/constants'
+import { useCamera } from '../context/Camera'
 
 const Sun = () => {
+    const { handleFocus } = useCamera()
+
     const CustomShaderMaterial = shaderMaterial(
         { emissiveIntensity: 1.0, time: 0 },
         // Vertex Shader
@@ -49,7 +52,7 @@ const Sun = () => {
     })
 
     return (
-        <RigidBody colliders='ball' userData={{ type: 'Sun' }} type='kinematicPosition'>
+        <RigidBody colliders='ball' userData={{ type: 'Sun' }} type='kinematicPosition' onClick={handleFocus}>
             <mesh>
                 <sphereGeometry args={[SUN_RADIUS, 32, 32]} />
                 <customShaderMaterial ref={shaderRef} emissiveIntensity={5} time={0} />
