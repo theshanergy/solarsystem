@@ -4,36 +4,79 @@ import { useLoader } from '@react-three/fiber'
 import { useCamera } from '../context/Camera'
 
 const Planet = ({ count }) => {
-    const mesh = useRef()
-    const { handleFocus } = useCamera()
+	const mesh = useRef()
+	const { handleFocus } = useCamera()
 
-    const texture = useLoader(TextureLoader, '/textures/planet.jpg')
+	const texture = useLoader(TextureLoader, '/textures/planet.jpg')
 
-    // Create a random color for each instance
-    const instanceColors = useMemo(() => {
-        const colors = new Float32Array(count * 3)
-        for (let i = 0; i < count; i++) {
-            // Random natural looking planet hue
-            const hue = 250 + Math.random() * 50
+	// Create per-instance color palettes
+	const instanceColors = useMemo(() => {
+		if (!count) return new Float32Array(0)
 
-            // Random saturation and lightness
-            const saturation = 40 + Math.random() * 60
-            const lightness = 60
+		const planetColors = new Float32Array(count * 3)
+		const planetColor = new Color()
 
-            const hslColor = new Color(`hsl(${hue}, ${saturation}%, ${lightness}%)`)
-            hslColor.toArray(colors, i * 3)
-        }
-        return colors
-    }, [count])
+		for (let i = 0; i < count; i++) {
+			const hue = (200 + Math.random() * 100) / 360
+			const saturation = (40 + Math.random() * 40) / 100
+			const lightness = (50 + Math.random() * 20) / 100
+			const offset = i * 3
 
-    return (
-        <instancedMesh ref={mesh} args={[null, null, count]} onClick={handleFocus} castShadow receiveShadow>
-            <sphereGeometry args={[2, 32, 32]}>
-                <instancedBufferAttribute attach='attributes-color' args={[instanceColors, 3]} />
-            </sphereGeometry>
-            <meshStandardMaterial vertexColors map={texture} />
-        </instancedMesh>
-    )
+			planetColor.setHSL(hue, saturation, lightness)
+			planetColor.toArray(planetColors, offset)
+		}
+
+		return planetColors
+	}, [count])
+
+	// Combined shader that renders both planet and atmosphere
+	const onBeforeCompile = useMemo(() => {
+		return (shader) => {
+			// Add uniforms for atmosphere
+			shader.uniforms.atmosphereCoefficient = { value: 0.6 }
+			shader.uniforms.atmospherePower = { value: 3.5 }
+			shader.uniforms.atmosphereIntensity = { value: 0.3 }
+
+			// Declare uniforms in fragment shader
+			shader.fragmentShader = shader.fragmentShader.replace(
+				'#include <common>',
+				`
+				#include <common>
+				uniform float atmosphereCoefficient;
+				uniform float atmospherePower;
+				uniform float atmosphereIntensity;
+				`
+			)
+
+			// Modify fragment shader to add atmospheric glow
+			shader.fragmentShader = shader.fragmentShader.replace(
+				'#include <dithering_fragment>',
+				`
+				#include <dithering_fragment>
+				
+				// Calculate atmospheric glow on edges
+				vec3 normalizedNormal = normalize(vNormal);
+				float atmoIntensity = pow(atmosphereCoefficient - dot(normalizedNormal, vec3(0.0, 0.0, 1.0)), atmospherePower);
+				atmoIntensity = max(atmoIntensity, 0.0) * atmosphereIntensity;
+				
+				// Use vertex color for atmosphere tint
+				vec3 atmosphereColor = vColor * 1.2; // Brighten the color for glow
+				
+				// Blend atmosphere with existing color
+				gl_FragColor.rgb += atmosphereColor * atmoIntensity;
+				`
+			)
+		}
+	}, [])
+
+	return (
+		<instancedMesh ref={mesh} args={[null, null, count]} onClick={handleFocus} castShadow receiveShadow>
+			<sphereGeometry args={[2, 32, 32]}>
+				<instancedBufferAttribute attach='attributes-color' args={[instanceColors, 3]} />
+			</sphereGeometry>
+			<meshStandardMaterial map={texture} vertexColors onBeforeCompile={onBeforeCompile} />
+		</instancedMesh>
+	)
 }
 
 export default Planet
